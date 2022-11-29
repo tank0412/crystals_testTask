@@ -13,20 +13,17 @@ public class ProductService {
         List<Product> productsFiltered = new ArrayList<>();
         if (products != null) {
             products.addAll(changedProducts);
-            products = products.stream()
-                    .filter(product -> product.getProductCode() != null)
-                    .sorted(Comparator.comparing(Product::getProductCode))
-                    .collect(Collectors.toList());
-
 
             Map<String, List<Product>> productGrouped = products.stream()
+                    .filter(product -> product.getProductCode() != null)
                     .sorted(Comparator.comparing(Product::getBegin))
                     .collect(Collectors.groupingBy(Product::getProductCode));
 
             for (String productCode : productGrouped.keySet()) {
                 List<Product> productsByCode = productGrouped.get(productCode);
 
-                List<Product> productsByCode2 = new ArrayList<>();
+                //reduce for products with same value and period which can be prolonged
+                List<Product> productsByCodeReduced = new ArrayList<>();
                 Map<Long, List<Product>> groupedByValue = productsByCode.stream().collect(Collectors.groupingBy(Product::getValue));
                 groupedByValue.entrySet().forEach(entrySet -> {
                     List<Product> productWithSameValue = entrySet.getValue();
@@ -38,26 +35,28 @@ public class ProductService {
                                     }
                                     return p1;
                                 });
-                        reducedProduct.ifPresent(productsByCode2::add);
+                        reducedProduct.ifPresent(productsByCodeReduced::add);
                     }
                     else {
-                        productsByCode2.addAll(productWithSameValue);
+                        productsByCodeReduced.addAll(productWithSameValue);
                     }
                 });
-                productsFiltered.addAll(productsByCode2);
+                productsFiltered.addAll(productsByCodeReduced);
 
-                List<Product> productsByCode3 = productsByCode2.stream().sorted(Comparator.comparing(Product::getBegin)).collect(Collectors.toList());
+                //proceed situation when product appears with same id but date period affecting current price
+                List<Product> productsByCodeCorrected = productsByCodeReduced.stream().sorted(Comparator.comparing(Product::getBegin))
+                        .collect(Collectors.toList());
                 List<Product> newProducts = new ArrayList<>();
-                for (int i = 0; i < productsByCode3.size(); ++i) {
-                    if (i + 1 < productsByCode3.size()) {
-                        Product productPeriod = productsByCode3.get(i);
-                        Product nextProductPeriod = productsByCode3.get(i + 1);
+                for (int i = 0; i < productsByCodeCorrected.size(); ++i) {
+                    if (i + 1 < productsByCodeCorrected.size()) {
+                        Product productPeriod = productsByCodeCorrected.get(i);
+                        Product nextProductPeriod = productsByCodeCorrected.get(i + 1);
 
                         if (nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0
                                 && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) < 0
                                 && nextProductPeriod.getNumber().equals(productPeriod.getNumber())
                                 && nextProductPeriod.getDepart().equals(productPeriod.getDepart())) {
-                            //create new Product
+
                             Product newProduct = new Product(productPeriod.getId(), productPeriod.getProductCode(),
                                     productPeriod.getNumber(), productPeriod.getDepart(), productPeriod.getBegin(),
                                     productPeriod.getEnd(), productPeriod.getValue());

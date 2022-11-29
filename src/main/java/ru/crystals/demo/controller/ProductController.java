@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     @Autowired
-    ProductService productService;
+    private ProductService productService;
 
     @PostMapping("/periodChange")
     public List<Product> proceedProductsPeriodChange(@RequestBody ProductPeriodChangeDto productPeriodChangeDto) {
