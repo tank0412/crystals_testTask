@@ -64,7 +64,9 @@ public class ProductService {
                             newProducts.add(newProduct);
                             productPeriod.setEnd(nextProductPeriod.getBegin());
                         }
-                        else  if (nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0
+                        else  if ((nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0 &&
+                                //начало у нового периода не должно быть больше, чем конец у старого
+                                nextProductPeriod.getBegin().compareTo(productPeriod.getEnd()) < 0)
                                 && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) > 0
                                 && nextProductPeriod.getNumber().equals(productPeriod.getNumber())
                                 && nextProductPeriod.getDepart().equals(productPeriod.getDepart())) {
