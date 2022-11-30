@@ -4,20 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.util.ResourceUtils;
 import ru.crystals.demo.dto.ProductPeriodChangeDto;
 import ru.crystals.demo.entity.Product;
 
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -32,8 +25,18 @@ class DemoApplicationTests extends AbstractTest {
 
     @Test
     public void changeProductPeriod() throws Exception {
-        String uri = "/products/periodChange";
+        testUsingExistingJsonFile("/products/periodChange",
+                "static/TwoProductsPeriodChangeRequest.json", "static/TwoProductsPeriodChangeResponse.json");
+    }
 
+    @Test
+    public void changeProductPeriodAndCoverAllExistingPeriods() throws Exception {
+        testUsingExistingJsonFile("/products/periodChange",
+                "static/OneProductPeriodChangeRequestWhenItCoversAllExistingPeriodRequest.json",
+                "static/OneProductPeriodChangeRequestWhenItCoversAllExistingPeriodResponse.json");
+    }
+
+    private void testUsingExistingJsonFile(String url, String requestFileName, String responseFileName) throws Exception {
         File requestJson = new ClassPathResource("static/TwoProductsPeriodChangeRequest.json").getFile();
         ProductPeriodChangeDto productPeriodChangeDto = super.mapFromJsonFile(requestJson, ProductPeriodChangeDto.class);
         File responseJson = new ClassPathResource("static/TwoProductsPeriodChangeResponse.json").getFile();
@@ -41,7 +44,7 @@ class DemoApplicationTests extends AbstractTest {
 
 
         String inputJson = super.mapToJson(productPeriodChangeDto);
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri)
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(url)
                 .contentType(MediaType.APPLICATION_JSON_VALUE).content(inputJson)).andReturn();
 
         int status = mvcResult.getResponse().getStatus();

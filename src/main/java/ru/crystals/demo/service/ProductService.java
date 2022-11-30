@@ -12,53 +12,47 @@ public class ProductService {
 
     public List<Product> proceedProductsPeriodChange(List<Product> products, List<Product> changedProducts) {
         Comparator<PricePeriod> pricePeriodComparator = Comparator
-                .comparing(PricePeriod::getBegin)
+                .comparing(PricePeriod::getProductCode)
+                .thenComparing(PricePeriod::getBegin)
                 .thenComparing(PricePeriod::getEnd);
         TreeMap<PricePeriod, Product> productMap = new TreeMap<>(pricePeriodComparator);
         for (Product p : products) {
-//            LocalDate begin = p.getBegin().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//            LocalDate end = p.getEnd().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            productMap.put(new PricePeriod(p.getBegin(), p.getEnd()), p);
+            productMap.put(new PricePeriod(p.getProductCode(), p.getBegin(), p.getEnd()), p);
         }
 
+        //filter products if there are products which period crosses period of changed products
         for (Product changedProduct : changedProducts) {
-//            LocalDate begin = changedProduct.getBegin().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//            LocalDate end = changedProduct.getEnd().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            PricePeriod changedPeriod = new PricePeriod(changedProduct.getBegin(), changedProduct.getEnd());
-
-//            Map.Entry<PricePeriod, Product> ceilingEntry = productMap.ceilingEntry(changedPeriod);
-            Map.Entry<PricePeriod, Product> floorEntry = productMap.floorEntry(changedPeriod);
-//            Map.Entry<PricePeriod, Product> lowerEntry = productMap.lowerEntry(changedPeriod);
-            //FIXME: Проверить на пересечение
-            if (floorEntry != null) {
-                PricePeriod floorEntryKey = floorEntry.getKey();
-                Product floorEntryValue = floorEntry.getValue();
-                if (floorEntryKey.getBegin().compareTo(changedPeriod.getBegin()) >= 0
-                        && floorEntryKey.getEnd().compareTo(changedPeriod.getEnd()) <= 0
-                && changedProduct.getDepart().equals(floorEntryValue.getDepart())
-                && changedProduct.getNumber().equals(floorEntryValue.getNumber())
-                && changedProduct.getProductCode().equals(floorEntryValue.getProductCode())) {
-                    productMap.remove(floorEntryKey);
-
-                    //FIXME: Is this really necessary
-//                    Map.Entry<PricePeriod, Product> higherEntry = productMap.higherEntry(changedPeriod);
-//                    if (higherEntry != null) {
-//                        if (floorEntryKey.getBegin().compareTo(changedPeriod.getBegin()) >= 0
-//                        && floorEntryKey.getEnd().compareTo(changedPeriod.getEnd()) <= 0
-//                                && changedProduct.getDepart().equals(floorEntryValue.getDepart())
-//                                && changedProduct.getNumber().equals(floorEntryValue.getNumber())
-//                                && changedProduct.getProductCode().equals(floorEntryValue.getProductCode())) {
-//                            productMap.remove(higherEntry.getKey());
-//                        }
-//                    }
+            PricePeriod changedPeriod = new PricePeriod(changedProduct.getProductCode(), changedProduct.getBegin(), changedProduct.getEnd());
+            Map.Entry<PricePeriod, Product> lowerEntry;
+            do {
+                lowerEntry = productMap.higherEntry(changedPeriod);
+                if (lowerEntry == null) {
+                    //try floor entry (less than or equal to the given key)
+                    lowerEntry = productMap.lowerEntry(changedPeriod);
+                }
+                if (lowerEntry != null) {
+                    PricePeriod floorEntryKey = lowerEntry.getKey();
+                    Product floorEntryValue = lowerEntry.getValue();
+                    if (floorEntryKey.getBegin().compareTo(changedPeriod.getBegin()) >= 0
+                            && floorEntryKey.getEnd().compareTo(changedPeriod.getEnd()) <= 0
+                            && changedProduct.getProductCode().equals(floorEntryValue.getProductCode())
+                            && changedProduct.getDepart().equals(floorEntryValue.getDepart())
+                            && changedProduct.getNumber().equals(floorEntryValue.getNumber())) {
+                        productMap.remove(floorEntryKey);
+                    } else {
+                        //so if it did not pass validation - exiting
+                        break;
+                    }
                 }
             }
+            while (lowerEntry != null);
         }
         products = new ArrayList<>(productMap.values());
 
 
         List<Product> productsFiltered = new ArrayList<>();
-        if (products != null) {
+        //second condition for a case when we removed all products which cross periods of changedProducts
+        if (products.size() > 0 || changedProducts.size() > 0) {
             products.addAll(changedProducts);
 
             Map<String, List<Product>> productGrouped = products.stream()
@@ -124,6 +118,5 @@ public class ProductService {
         }
         productsFiltered = productsFiltered.stream().sorted(Comparator.comparing(Product::getBegin)).collect(Collectors.toList());
         return productsFiltered;
-        //return null;
     }
 }

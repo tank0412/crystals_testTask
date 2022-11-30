@@ -9,8 +9,7 @@ import ru.crystals.demo.dto.ProductPeriodChangeDto;
 import ru.crystals.demo.entity.Product;
 import ru.crystals.demo.service.ProductService;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/products", produces = "application/json")

@@ -8,13 +8,10 @@ import java.util.Date;
 
 @AllArgsConstructor
 @Data
-public class PricePeriod/* implements Comparable<PricePeriod>*/ {
+public class PricePeriod {
+    private String productCode; // код товара
+
     private Date begin; // начало действия
 
     private Date end; // конец действия
-
-//    @Override
-//    public int compareTo(PricePeriod pricePeriod) {
-//       return begin.compareTo(pricePeriod.getBegin()) * pricePeriod.getBegin().compareTo(begin);
-//    }
 }
