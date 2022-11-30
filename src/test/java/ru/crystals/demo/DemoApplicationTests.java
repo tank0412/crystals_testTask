@@ -36,6 +36,13 @@ class DemoApplicationTests extends AbstractTest {
                 "static/OneProductPeriodChangeRequestWhenItCoversAllExistingPeriodResponse.json");
     }
 
+    @Test
+    public void changeProductPeriodAndAffectTwoPeriods() throws Exception {
+        testUsingExistingJsonFile("/products/periodChange",
+                "static/OneProductPeriodChangeRequestWhenItAffectsTwoExistingPeriodsRequest.json",
+                "static/OneProductPeriodChangeRequestWhenItAffectsTwoExistingPeriodsResponse.json");
+    }
+
     private void testUsingExistingJsonFile(String url, String requestFileName, String responseFileName) throws Exception {
         File requestJson = new ClassPathResource("static/TwoProductsPeriodChangeRequest.json").getFile();
         ProductPeriodChangeDto productPeriodChangeDto = super.mapFromJsonFile(requestJson, ProductPeriodChangeDto.class);
