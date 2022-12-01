@@ -43,12 +43,18 @@ class DemoApplicationTests extends AbstractTest {
                 "static/OneProductPeriodChangeRequestWhenItAffectsTwoExistingPeriodsResponse.json");
     }
 
-    private void testUsingExistingJsonFile(String url, String requestFileName, String responseFileName) throws Exception {
-        File requestJson = new ClassPathResource("static/TwoProductsPeriodChangeRequest.json").getFile();
-        ProductPeriodChangeDto productPeriodChangeDto = super.mapFromJsonFile(requestJson, ProductPeriodChangeDto.class);
-        File responseJson = new ClassPathResource("static/TwoProductsPeriodChangeResponse.json").getFile();
-        Product[] expectedProductsResponse = super.mapFromJsonFile(responseJson, Product[].class);
+    @Test
+    public void changeProductPeriodAndAffectTwoPeriodsAndAbsorbOne() throws Exception {
+        testUsingExistingJsonFile("/products/periodChange",
+                "static/OneProductPeriodChangeRequestWhenItAffectsTwoExistingPeriodsAndAbsorbOneRequest.json",
+                "static/OneProductPeriodChangeRequestWhenItAffectsTwoExistingPeriodsAndAbsorbOneResponse.json");
+    }
 
+    private void testUsingExistingJsonFile(String url, String requestFileName, String responseFileName) throws Exception {
+        File requestJson = new ClassPathResource(requestFileName).getFile();
+        ProductPeriodChangeDto productPeriodChangeDto = super.mapFromJsonFile(requestJson, ProductPeriodChangeDto.class);
+        File responseJson = new ClassPathResource(responseFileName).getFile();
+        Product[] expectedProductsResponse = super.mapFromJsonFile(responseJson, Product[].class);
 
         String inputJson = super.mapToJson(productPeriodChangeDto);
         MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(url)

@@ -1,5 +1,6 @@
 package ru.crystals.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,5 +27,8 @@ public class Product {
     private Date end; // конец действия
 
     private Long value; // значение цены в копейках
+
+    @JsonIgnore
+    private boolean isProductChange;
 
 }

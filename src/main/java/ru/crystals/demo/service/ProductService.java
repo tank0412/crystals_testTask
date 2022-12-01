@@ -22,6 +22,7 @@ public class ProductService {
 
         //filter products if there are products which period crosses period of changed products
         for (Product changedProduct : changedProducts) {
+            changedProduct.setProductChange(true);
             PricePeriod changedPeriod = new PricePeriod(changedProduct.getProductCode(), changedProduct.getBegin(), changedProduct.getEnd());
             Map.Entry<PricePeriod, Product> lowerEntry;
             do {
@@ -92,31 +93,52 @@ public class ProductService {
                         Product productPeriod = productsByCodeCorrected.get(i);
                         Product nextProductPeriod = productsByCodeCorrected.get(i + 1);
 
-                        if (nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0
-                                && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) < 0
-                                && nextProductPeriod.getNumber().equals(productPeriod.getNumber())
+                        //check number and department
+                        if (nextProductPeriod.getNumber().equals(productPeriod.getNumber())
                                 && nextProductPeriod.getDepart().equals(productPeriod.getDepart())) {
 
-                            Product newProduct = new Product(productPeriod.getId(), productPeriod.getProductCode(),
-                                    productPeriod.getNumber(), productPeriod.getDepart(), productPeriod.getBegin(),
-                                    productPeriod.getEnd(), productPeriod.getValue());
-                            newProduct.setBegin(nextProductPeriod.getEnd());
-                            newProducts.add(newProduct);
-                            productPeriod.setEnd(nextProductPeriod.getBegin());
-                        } else if ((nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0 &&
-                                //начало у нового периода не должно быть больше, чем конец у старого
-                                nextProductPeriod.getBegin().compareTo(productPeriod.getEnd()) < 0)
-                                && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) > 0
-                                && nextProductPeriod.getNumber().equals(productPeriod.getNumber())
-                                && nextProductPeriod.getDepart().equals(productPeriod.getDepart())) {
-                            productPeriod.setEnd(nextProductPeriod.getBegin());
+                            if (nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0
+                                    && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) < 0) {
+                                //ProductPeriod - 01.01.2013-31.01.2013
+                                //NextProductPeriod - 12.01.2013-13.01.20138
+                                Product newProduct = new Product(productPeriod.getId(), productPeriod.getProductCode(),
+                                        productPeriod.getNumber(), productPeriod.getDepart(), productPeriod.getBegin(),
+                                        productPeriod.getEnd(), productPeriod.getValue(), false);
+                                newProduct.setBegin(nextProductPeriod.getEnd());
+                                newProducts.add(newProduct);
+                                productPeriod.setEnd(nextProductPeriod.getBegin());
+                            } else if ((nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) > 0 &&
+                                    //начало у нового периода не должно быть больше, чем конец у старого
+                                    nextProductPeriod.getBegin().compareTo(productPeriod.getEnd()) < 0)
+                                    && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) > 0) {
+                                //to fix a situation when change product affect few periods which existed earlier
+                                if (nextProductPeriod.getBegin().compareTo(productPeriod.getEnd()) < 0
+                                        && !nextProductPeriod.isProductChange()) {
+                                    //ProductPeriod - 01.01.2013-15.02.2013 false
+                                    //NextProductPeriod - 01.02.2013-28.02.2013 false
+                                    nextProductPeriod.setBegin(productPeriod.getEnd());
+                                } else {
+                                    //ProductPeriod - 01.01.2013-03.03.2013
+                                    //NextProductPeriod - 31.01.2013-15.03.2013
+                                    productPeriod.setEnd(nextProductPeriod.getBegin());
+                                }
+                            } else if (nextProductPeriod.getBegin().compareTo(productPeriod.getBegin()) == 0
+                                    && nextProductPeriod.getEnd().compareTo(productPeriod.getEnd()) > 0
+                                    && nextProductPeriod.getBegin().compareTo(productPeriod.getEnd()) < 0) {
+                                //ProductPeriod - 15.02.2013-28.02.2013
+                                //NextProductPeriod - 15.02.2013-15.03.2013
+                                productsFiltered.set(i, null);
+                            }
+
                         }
                     }
                 }
                 productsFiltered.addAll(newProducts);
             }
         }
-        productsFiltered = productsFiltered.stream().sorted(Comparator.comparing(Product::getBegin)).collect(Collectors.toList());
+        productsFiltered = productsFiltered.stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(Product::getBegin)).collect(Collectors.toList());
         return productsFiltered;
     }
 }
